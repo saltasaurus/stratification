@@ -1,0 +1,11 @@
+[project]
+name = "classical-ml"
+version = "0.1.0"
+requires-python = ">=3.11"
+dependencies = ["bedrock", "numpy", "matplotlib", "ipykernel"]
+
+[tool.uv]
+package = false
+
+[tool.uv.sources]
+bedrock = { workspace = true }
