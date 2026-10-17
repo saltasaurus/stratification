@@ -13,10 +13,31 @@ class LogisticRegression:
         n, d = X.shape
         self.w, self.b = np.zeros(d), 0.0
         for _ in range(self.epochs):
-            # 1. forward: z, then p
-            # 2. gradient: err = p - y, then dw and db
-            # 3. update w and b
-            ...
+            s = X @ self.w + self.b  # scores = features @ weights + bias
+            p = sigmoid(s)  # probabilities = sigmoid(scores)
+            err = p - y  # errors = probabilities - labels
+            dw = X.T @ err / n  # grad weights = average(features * error)
+            db = err.mean()  # grad bias = average(error)
+
+            self.w -= self.lr * dw
+            self.b -= self.lr * db
+
         return self
 
-    def predict_proba(self, X): ...
+    def predict_proba(self, X):
+        return sigmoid(X @ self.w + self.b)
+
+
+if __name__ == "__main__":
+    X = np.array([[0.5], [1.0], [1.5], [2.5], [3.0], [3.5]])
+    y = np.array([0, 0, 0, 1, 1, 1])
+    model = LogisticRegression(epochs=100)
+
+    model.fit(X, y)
+
+    print(model.predict_proba(X))
+    # decision boundary for single feature derived from the following:
+    # Decision flips from 0<->1 at sigmoid(score)=0.5, which is when score=0, therefore
+    # > score = weight * x + bias = 0
+    # > x = -bias / weight
+    print(-model.b / model.w[0])
