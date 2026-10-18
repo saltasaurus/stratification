@@ -5,6 +5,22 @@ def as_tensaur(data) -> "Tensaur":
     return data if isinstance(data, Tensaur) else Tensaur(data)
 
 
+def collapse(x: np.ndarray, shape: tuple):
+    """ """
+
+    if x.shape == shape:
+        return x
+
+    while len(x.shape) > len(shape):
+        x = x.sum(axis=0)
+
+    for dim, sz in enumerate(shape):
+        if sz == 1 and x.shape[dim] != 1:
+            x = x.sum(axis=dim, keepdims=True)
+
+    return x
+
+
 class Tensaur:
     def __init__(self, data, _children=None, _op="", _label=""):
         self.data = np.asarray(data, dtype=float)
@@ -26,8 +42,8 @@ class Tensaur:
 
         def _backward():
             # Self and other can have different shapes than out, so we must aggregate, not just broadcast the gradients
-            self.grad += out.grad.sum() if out.grad.shape != self.grad.shape else out.grad
-            other.grad += out.grad.sum() if out.grad.shape != other.grad.shape else out.grad
+            self.grad += collapse(out.grad, self.grad.shape)
+            other.grad += collapse(out.grad, other.grad.shape)
 
         out._backward = _backward
 
@@ -39,8 +55,8 @@ class Tensaur:
         out = Tensaur(self.data * other.data, (self, other))
 
         def _backward():
-            self.grad += other.data * out.grad
-            other.grad += self.data * out.grad
+            self.grad += collapse(other.data * out.grad, self.grad.shape)
+            other.grad += collapse(self.data * out.grad, other.grad.shape)
 
         out._backward = _backward
 
