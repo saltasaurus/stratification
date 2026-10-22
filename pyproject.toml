@@ -4,7 +4,9 @@ version = "0.1.0"
 description = "Series of ML projects whose knowledge builds off one another to form the core of deep learning"
 readme = "README.md"
 requires-python = ">=3.12"
-dependencies = []
+dependencies = [
+    "scipy>=1.18.1",
+]
 
 [dependency-groups]
 dev = [

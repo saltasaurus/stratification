@@ -121,14 +121,14 @@ class TestTensaurUtils:
             ((2, 6, 3), (3,), 12.0),  # two extra front axes
         ],
     )
-    def test_collapse(grad_shape, target_shape, expected_value):
+    def test_collapse(self, grad_shape, target_shape, expected_value):
         grad = np.ones(grad_shape)
         out = collapse(grad, target_shape)
 
         assert out.shape == target_shape
         npt.assert_allclose(out, np.full(target_shape, expected_value))
 
-    def test_collapse_does_not_modify_input():
+    def test_collapse_does_not_modify_input(self):
         grad = np.ones((6, 3))
         collapse(grad, (3,))
         npt.assert_allclose(grad, np.ones((6, 3)))
