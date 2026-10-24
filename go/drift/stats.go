@@ -1,6 +1,10 @@
 package drift
 
-import "math"
+import (
+	"math"
+	"slices"
+	"sort"
+)
 
 func Mean(x []float64) float64 {
 	n := len(x)
@@ -21,9 +25,21 @@ func Variance(x []float64) float64 {
 
 	var xs []float64
 	for _, val := range x {
-		xs = append(xs, math.Pow(val - mean, 2))
+		xs = append(xs, math.Pow(val-mean, 2))
 	}
 
 	return Mean(xs)
+}
 
+func sortedCopy(x []float64) []float64 {
+
+	dst := slices.Clone(x)
+	slices.Sort(dst)
+
+	return dst
+}
+
+func EmpiricalCDF(x []float64, t []float64) float64 {
+	i := sort.Search(len(x), func(i int) bool { return x[i] > t })
+	return float64(i) / float64(len(x))
 }
