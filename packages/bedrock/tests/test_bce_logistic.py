@@ -59,7 +59,7 @@ def test_sigmoid_bce_grads_match_handwritten():
     n = y_np.shape[0]
     dz = (p - y_np) / n
     dw = X_np.T @ dz
-    db = dz.sum() / n  # scalar
+    db = dz.sum()
     X = Tensaur(X_np.copy())
     y = Tensaur(y_np.copy())
     w = Tensaur(w_np.copy())
@@ -87,8 +87,8 @@ def test_fit_tensaur_loss_decreases():
     w0 = np.zeros((2, 1))
     b0 = np.zeros((1, 1))
     loss0 = _bce_mean_np(_sigmoid(X_np @ w0 + b0), y_np)
-    w = np.asarray(model.w.data)
-    b = np.asarray(model.b)
+    w = np.asarray(model.w.data, dtype=float)
+    b = np.asarray(model.b.data, dtype=float)
     loss1 = _bce_mean_np(_sigmoid(X_np @ w + b), y_np)
     assert loss1 < loss0
 
@@ -104,7 +104,7 @@ def test_fit_tensaur_grads_match_numpy_fit_one_step():
     n = y_np.shape[0]
     dz = (p - y_np) / n
     dw_ref = X_np.T @ dz
-    db_ref = float(dz.sum() / n)
+    db_ref = float(dz.sum())
     X = Tensaur(X_np.copy())
     y = Tensaur(y_np.copy())
     w = Tensaur(w0.copy())
