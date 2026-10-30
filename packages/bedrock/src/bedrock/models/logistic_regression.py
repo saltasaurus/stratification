@@ -44,8 +44,8 @@ class LogisticRegression:
         self.w, self.b = Tensaur(np.zeros((d, 1))), Tensaur(np.zeros((1, 1)))
 
         for epoch in range(self.epochs):
-            self.w.grad[:] = 0
-            self.b.grad[:] = 0
+            self.w.zero_grad()
+            self.b.zero_grad()
 
             logits = X @ self.w + self.b
             probs = logits.sigmoid()

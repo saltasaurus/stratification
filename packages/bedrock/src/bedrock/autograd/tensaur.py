@@ -6,7 +6,34 @@ def as_tensaur(data) -> "Tensaur":
 
 
 def collapse(x: np.ndarray, shape: tuple):
-    """ """
+    """Sum ``x`` down to ``shape`` so a broadcast gradient matches a tensor
+
+    Parameters
+    ----------
+    x : np.ndarray
+        Gradient whose shape may be larger than ``shape`` due to forward pass broadcasting.
+    shape : tuple of int
+        Target shape, usually ``self.grad.shape`` of the input tensor ``x``.
+
+    Returns
+    -------
+    np.ndarray
+        ``x`` reduced to ``shape``. If ``x.shape == shape``, ``x`` is unchanged. Extra leading
+        axes are summed away; axes of size 1 in ``shape`` but larger in ``x`` are summed with
+        ``keepdims=true``.
+
+    Notes
+    -----
+    Used in Tensaur backward passes after an opn broadcasts an input. Gradients must be
+    accumulated into *original* operand shape, not the broadcasted one.
+
+    Examples
+    --------
+    >>> collapse(np.ones((3, 4)), (3, 1)).shape
+    (3, 1)
+    >>> collapse(np.ones((2, 3, 4)), (3, 4)).shape
+    (3, 4)
+    """
 
     if x.shape == shape:
         return x
@@ -138,6 +165,9 @@ class Tensaur:
         self.grad = np.ones_like(self.grad, dtype=float)
         for v in reversed(topo):
             v._backward()
+
+    def zero_grad(self) -> None:
+        self.grad = np.zeros_like(self.data)
 
     # Custom unary operators
     # def sigmoid(self) -> "Tensaur":
