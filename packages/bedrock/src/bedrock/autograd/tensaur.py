@@ -146,7 +146,34 @@ class Tensaur:
         out._backward = _backward
         return out
 
-    def backward(self):
+    def backward(self, grad=None):
+        """Backpropagate gradients through the graph rooted at this tensor.
+
+        Parameters
+        ----------
+        grad : array-like, optional
+            Upstream gradient to seed at this tensor. If omitted, seeds
+            with ones of shape ``self.data.shape`` (usual for a scalar
+            loss). If provided, must broadcast to ``self.data.shape``.
+
+        Returns
+        -------
+        None
+            Gradients are written into ``.grad`` of tensors in the graph.
+            Leaves (weights, biases, inputs) hold the accumulated grads
+            after this call.
+
+        Notes
+        -----
+        Builds a reverse topological order of ancestors, assigns
+            ``self.grad`` from ``grad`` (or ones), then runs each node's
+            ``_backward`` from outputs toward inputs. Each node's local
+            rule should ``+=`` into children's ``.grad`` (often via
+            ``collapse``) so shared subgraphs accumulate correctly.
+
+        Call ``zero_grad()`` on parameters before ``backward()`` if you
+            reuse tensors across steps; otherwise prior grads leak in.
+        """
 
         # topological order all of the children in the graph
         topo = []
@@ -161,8 +188,12 @@ class Tensaur:
 
         build_topo(self)
 
+        # Initialize gradient as 1 (default) or seeded
+        if grad is None:
+            self.grad = np.ones_like(self.data, dtype=float)
+        else:
+            self.grad = np.asarray(grad, dtype=float).copy()
         # go one variable at a time and apply the chain rule to get its gradient
-        self.grad = np.ones_like(self.grad, dtype=float)
         for v in reversed(topo):
             v._backward()
 
