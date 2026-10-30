@@ -93,6 +93,38 @@ def test_fit_tensaur_loss_decreases():
     assert loss1 < loss0
 
 
+def test_fit_tensaur_grads_match_with_l2():
+    rng = np.random.default_rng(5)
+    X_np = rng.normal(size=(12, 4))
+    y_np = rng.integers(0, 2, size=(12, 1)).astype(float)
+    w0 = rng.normal(size=(4, 1)) * 0.05
+    b0 = np.array([[0.1]])
+    lam = 0.1
+
+    z = X_np @ w0 + b0
+    p = _sigmoid(z)
+    n = y_np.shape[0]
+    dz = (p - y_np) / n
+    dw_bce = X_np.T @ dz
+    db_bce = float(dz.sum())
+    dw_ref = dw_bce + lam * w0
+    db_ref = db_bce  # bias not in L2
+
+    X = Tensaur(X_np.copy())
+    y = Tensaur(y_np.copy())
+    w = Tensaur(w0.copy())
+    b = Tensaur(b0.copy())
+
+    logits = X @ w + b
+    probs = logits.sigmoid()
+    reg = (lam / 2) * (w * w).sum()
+    loss = bce_mean(probs, y) + reg
+    loss.backward()
+
+    np.testing.assert_allclose(w.grad, dw_ref, rtol=1e-5, atol=1e-6)
+    np.testing.assert_allclose(float(np.asarray(b.grad).sum()), db_ref, rtol=1e-5, atol=1e-6)
+
+
 def test_fit_tensaur_grads_match_numpy_fit_one_step():
     rng = np.random.default_rng(4)
     X_np = rng.normal(size=(12, 4))

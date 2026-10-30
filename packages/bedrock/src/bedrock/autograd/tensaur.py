@@ -140,15 +140,36 @@ class Tensaur:
             v._backward()
 
     # Custom unary operators
+    # def sigmoid(self) -> "Tensaur":
+
+    #     s = 1 / (1 + np.exp(-self.data))
+    #     out = Tensaur(s, (self,), "sigmoid")
+
+    #     def _backward():
+    #         self.grad += collapse(s * (1 - s) * out.grad, self.grad.shape)
+
+    #     out._backward = _backward
+    #     return out
+
     def sigmoid(self) -> "Tensaur":
 
-        s = 1 / (1 + np.exp(-self.data))
-        out = Tensaur(s, (self,), "sigmoid")
+        data = np.empty_like(self.data, dtype=float)
+
+        # mask of non-negative scores
+        pos_mask = self.data >= 0
+        data[pos_mask] = 1 / (1 + np.exp(-self.data[pos_mask]))
+
+        # negative scores only
+        exp_z = np.exp(self.data[~pos_mask])
+        data[~pos_mask] = exp_z / (1 + exp_z)
+
+        out = Tensaur(data, (self,), "sigmoid")
 
         def _backward():
-            self.grad += collapse(s * (1 - s) * out.grad, self.grad.shape)
+            self.grad += collapse(data * (1 - data) * out.grad, self.grad.shape)
 
         out._backward = _backward
+
         return out
 
     def log(self) -> "Tensaur":

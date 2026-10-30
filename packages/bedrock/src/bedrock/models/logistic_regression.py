@@ -20,9 +20,9 @@ def sigmoid(z: np.ndarray) -> np.ndarray:
 
 
 class LogisticRegression:
-    def __init__(self, lr=0.5, epochs=1000):
+    def __init__(self, lr=0.5, epochs=1000, l2=0.1):
         self.lr, self.epochs = lr, epochs
-        self.l2reg = 0.1
+        self.l2reg = l2
 
     def fit(self, X: np.ndarray, y: np.ndarray):
         n, d = X.shape
@@ -43,17 +43,21 @@ class LogisticRegression:
         n, d = X.data.shape
         self.w, self.b = Tensaur(np.zeros((d, 1))), Tensaur(np.zeros((1, 1)))
 
-        for _ in range(self.epochs):
+        for epoch in range(self.epochs):
             self.w.grad[:] = 0
             self.b.grad[:] = 0
 
             logits = X @ self.w + self.b
             probs = logits.sigmoid()
-            loss = bce_mean(probs, y)
+            reg_loss = (self.l2reg / 2) * (self.w * self.w).sum()
+            loss = bce_mean(probs, y) + reg_loss
             loss.backward()
 
             self.w.data -= self.lr * self.w.grad
             self.b.data -= self.lr * self.b.grad
+
+            if epoch % 100 == 0:
+                print(f"Epoch {epoch} loss: {loss.data}")
 
         return self
 
@@ -62,6 +66,18 @@ class LogisticRegression:
 
 
 if __name__ == "__main__":
-    x = np.array([-1000, 0, 1000])
-
-    print(sigmoid(x))
+    rng = np.random.default_rng(0)
+    X = np.vstack(
+        [
+            rng.normal(loc=-1.0, size=(30, 2)),
+            rng.normal(loc=1.0, size=(30, 2)),
+        ]
+    )
+    y = np.array([[0.0]] * 30 + [[1.0]] * 30)
+    model = LogisticRegression(lr=0.5, epochs=1000, l2=0.5)
+    model.fit_tensaur(Tensaur(X), Tensaur(y))
+    w = np.asarray(model.w.data, dtype=float)
+    b = np.asarray(model.b.data, dtype=float)
+    p = sigmoid(X @ w + b)
+    acc = float(np.mean((p >= 0.5) == y))
+    print(f"final acc={acc:.2f}\nw={w}\nb={b}")
