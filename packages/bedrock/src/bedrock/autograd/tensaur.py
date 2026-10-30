@@ -35,7 +35,7 @@ class Tensaur:
 
         self._backward = lambda: None
 
-    def __add__(self, other: "Tensaur") -> "Tensaur":
+    def __add__(self, other) -> "Tensaur":
         other = as_tensaur(other)
 
         out = Tensaur(self.data + other.data, (self, other), _op="add")
@@ -49,7 +49,7 @@ class Tensaur:
 
         return out
 
-    def __mul__(self, other: "Tensaur") -> "Tensaur":
+    def __mul__(self, other) -> "Tensaur":
         other = as_tensaur(other)
 
         out = Tensaur(self.data * other.data, (self, other), _op="mul")
@@ -75,13 +75,42 @@ class Tensaur:
 
         return out
 
-    def __radd__(self, other):
+    def __pow__(self, other):
+        assert isinstance(other, (int, float)), "only supporting int/float powers for now"
+        out = Tensaur(self.data**other, (self,), f"**{other}")
+
+        def _backward():
+            self.grad += (other * self.data ** (other - 1)) * out.grad
+
+        out._backward = _backward
+
+        return out
+
+    def __neg__(self) -> "Tensaur":  # -self
+        return self * -1
+
+    def __radd__(self, other) -> "Tensaur":  # other + self
         return self + other
 
-    def __rmul__(self, other):
+    def __sub__(self, other) -> "Tensaur":  # self - other
+        return self + (-other)
+
+    def __rsub__(self, other) -> "Tensaur":  # other - self
+        return other + (-self)
+
+    def __rmul__(self, other) -> "Tensaur":  # other * self
         return self * other
 
-    def sum(self):
+    def __truediv__(self, other) -> "Tensaur":  # self / other
+        return self * other**-1
+
+    def __rtruediv__(self, other) -> "Tensaur":  # other / self
+        return other * self**-1
+
+    def __repr__(self) -> str:
+        return f"Tensaur(data={self.data}, grad={self.grad})"
+
+    def sum(self) -> "Tensaur":
         out = Tensaur(self.data.sum(), (self,), _op="sum")
 
         def _backward():
@@ -109,3 +138,43 @@ class Tensaur:
         self.grad = np.ones_like(self.grad, dtype=float)
         for v in reversed(topo):
             v._backward()
+
+    # Custom unary operators
+    def sigmoid(self) -> "Tensaur":
+
+        s = 1 / (1 + np.exp(-self.data))
+        out = Tensaur(s, (self,), "sigmoid")
+
+        def _backward():
+            self.grad += collapse(s * (1 - s) * out.grad, self.grad.shape)
+
+        out._backward = _backward
+
+        return out
+
+    def log(self) -> "Tensaur":
+
+        out = Tensaur(np.log(self.data), (self,), "ln")
+
+        def _backward():
+            self.grad += collapse(out.grad / self.data, self.grad.shape)
+
+        out._backward = _backward
+
+        return out
+
+    def clamp(self, xmin, xmax) -> "Tensaur":
+
+        out = Tensaur(np.clip(self.data, xmin, xmax))
+
+        def _backward():
+            above_min = np.where(xmin <= self.data)
+            below_max = np.where(self.data <= xmax)
+
+            valid = np.logical_or(above_min, below_max)
+
+            self.grad += valid
+
+        out._backward = _backward
+
+        return out
