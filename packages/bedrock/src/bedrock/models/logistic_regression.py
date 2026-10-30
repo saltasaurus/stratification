@@ -1,6 +1,7 @@
 import numpy as np
 
 from bedrock.autograd.tensaur import Tensaur
+from bedrock.loss import bce_mean
 
 
 def sigmoid(z: np.ndarray) -> np.ndarray:
@@ -40,17 +41,21 @@ class LogisticRegression:
 
     def fit_tensaur(self, X: Tensaur, y: Tensaur):
         n, d = X.data.shape
-        self.w, self.b = Tensaur(np.zeros(d)), 0.0
+        self.w, self.b = Tensaur(np.zeros((d, 1))), Tensaur(np.zeros((1, 1)))
 
         for _ in range(self.epochs):
-            s = X @ self.w + self.b
-            p = sigmoid(s)
-            err = (p - y) + (self.l2reg / 2) * (self.w * self.w).sum()
-            dw = X.T @ err / n
-            db = err.mean()
+            self.w.grad[:] = 0
+            self.b.grad[:] = 0
 
-            self.w -= self.lr * dw
-            self.b -= self.lr * db
+            logits = X @ self.w + self.b
+            probs = logits.sigmoid()
+            loss = bce_mean(probs, y)
+            loss.backward()
+
+            self.w.data -= self.lr * self.w.grad
+            self.b.data -= self.lr * self.b.grad
+
+        return self
 
     def predict_proba(self, X):
         return sigmoid(X @ self.w + self.b)

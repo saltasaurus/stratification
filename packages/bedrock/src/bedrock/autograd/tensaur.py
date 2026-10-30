@@ -149,7 +149,6 @@ class Tensaur:
             self.grad += collapse(s * (1 - s) * out.grad, self.grad.shape)
 
         out._backward = _backward
-
         return out
 
     def log(self) -> "Tensaur":
@@ -160,21 +159,15 @@ class Tensaur:
             self.grad += collapse(out.grad / self.data, self.grad.shape)
 
         out._backward = _backward
-
         return out
 
     def clamp(self, xmin, xmax) -> "Tensaur":
 
-        out = Tensaur(np.clip(self.data, xmin, xmax))
+        out = Tensaur(np.clip(self.data, xmin, xmax), (self,), _op="clamp")
 
         def _backward():
-            above_min = np.where(xmin <= self.data)
-            below_max = np.where(self.data <= xmax)
-
-            valid = np.logical_or(above_min, below_max)
-
-            self.grad += valid
+            valid: np.ndarray = (self.data >= xmin) & (self.data <= xmax)
+            self.grad += collapse(valid.astype(float) * out.grad, self.grad.shape)
 
         out._backward = _backward
-
         return out
