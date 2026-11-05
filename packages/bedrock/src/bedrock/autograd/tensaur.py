@@ -24,7 +24,7 @@ def collapse(x: np.ndarray, shape: tuple):
 
     Notes
     -----
-    Used in Tensaur backward passes after an opn broadcasts an input. Gradients must be
+    Used in Tensaur backward passes after an op broadcasts an input. Gradients must be
     accumulated into *original* operand shape, not the broadcasted one.
 
     Examples
@@ -199,18 +199,6 @@ class Tensaur:
 
     def zero_grad(self) -> None:
         self.grad = np.zeros_like(self.data)
-
-    # Custom unary operators
-    # def sigmoid(self) -> "Tensaur":
-
-    #     s = 1 / (1 + np.exp(-self.data))
-    #     out = Tensaur(s, (self,), "sigmoid")
-
-    #     def _backward():
-    #         self.grad += collapse(s * (1 - s) * out.grad, self.grad.shape)
-
-    #     out._backward = _backward
-    #     return out
 
     def sigmoid(self) -> "Tensaur":
 
