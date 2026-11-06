@@ -2,7 +2,9 @@ import numpy as np
 
 
 def as_tensaur(data) -> "Tensaur":
-    return data if isinstance(data, Tensaur) else Tensaur(data)
+    if isinstance(data, Tensaur):
+        return data
+    return Tensaur(data, requires_grad=False)
 
 
 def collapse(x: np.ndarray, shape: tuple):
@@ -49,9 +51,9 @@ def collapse(x: np.ndarray, shape: tuple):
 
 
 class Tensaur:
-    def __init__(self, data, _children=None, _op="", _label=""):
+    def __init__(self, data, _children=None, _op="", _label="", *, requires_grad=True):
         self.data = np.asarray(data, dtype=float)
-
+        self.requires_grad = requires_grad
         self.grad = np.zeros_like(self.data)
         self._op = _op
         self._label = _label
@@ -69,8 +71,10 @@ class Tensaur:
 
         def _backward():
             # Self and other can have different shapes than out, so we must aggregate, not just broadcast the gradients
-            self.grad += collapse(out.grad, self.grad.shape)
-            other.grad += collapse(out.grad, other.grad.shape)
+            if self.requires_grad:
+                self.grad += collapse(out.grad, self.grad.shape)
+            if self.requires_grad:
+                other.grad += collapse(out.grad, other.grad.shape)
 
         out._backward = _backward
 
@@ -82,8 +86,10 @@ class Tensaur:
         out = Tensaur(self.data * other.data, (self, other), _op="mul")
 
         def _backward():
-            self.grad += collapse(other.data * out.grad, self.grad.shape)
-            other.grad += collapse(self.data * out.grad, other.grad.shape)
+            if self.requires_grad:
+                self.grad += collapse(other.data * out.grad, self.grad.shape)
+            if self.requires_grad:
+                other.grad += collapse(self.data * out.grad, other.grad.shape)
 
         out._backward = _backward
 
@@ -95,8 +101,10 @@ class Tensaur:
         out = Tensaur(self.data @ other.data, (self, other), _op="matmul")
 
         def _backward():
-            self.grad += collapse(out.grad @ other.data.T, self.grad.shape)
-            other.grad += collapse(self.data.T @ out.grad, other.grad.shape)
+            if self.requires_grad:
+                self.grad += collapse(out.grad @ other.data.T, self.grad.shape)
+            if other.requires_grad:
+                other.grad += collapse(self.data.T @ out.grad, other.grad.shape)
 
         out._backward = _backward
 
@@ -107,7 +115,8 @@ class Tensaur:
         out = Tensaur(self.data**other, (self,), f"**{other}")
 
         def _backward():
-            self.grad += (other * self.data ** (other - 1)) * out.grad
+            if self.requires_grad:
+                self.grad += (other * self.data ** (other - 1)) * out.grad
 
         out._backward = _backward
 
@@ -141,7 +150,8 @@ class Tensaur:
         out = Tensaur(self.data.sum(), (self,), _op="sum")
 
         def _backward():
-            self.grad += collapse(np.ones_like(self.data) * out.grad, self.grad.shape)
+            if self.requires_grad:
+                self.grad += collapse(np.ones_like(self.data) * out.grad, self.grad.shape)
 
         out._backward = _backward
         return out
@@ -215,7 +225,8 @@ class Tensaur:
         out = Tensaur(data, (self,), "sigmoid")
 
         def _backward():
-            self.grad += collapse(data * (1 - data) * out.grad, self.grad.shape)
+            if self.requires_grad:
+                self.grad += collapse(data * (1 - data) * out.grad, self.grad.shape)
 
         out._backward = _backward
 
@@ -226,7 +237,8 @@ class Tensaur:
         out = Tensaur(np.log(self.data), (self,), "ln")
 
         def _backward():
-            self.grad += collapse(out.grad / self.data, self.grad.shape)
+            if self.requires_grad:
+                self.grad += collapse(out.grad / self.data, self.grad.shape)
 
         out._backward = _backward
         return out
@@ -236,8 +248,9 @@ class Tensaur:
         out = Tensaur(np.clip(self.data, xmin, xmax), (self,), _op="clamp")
 
         def _backward():
-            valid: np.ndarray = (self.data >= xmin) & (self.data <= xmax)
-            self.grad += collapse(valid.astype(float) * out.grad, self.grad.shape)
+            if self.requires_grad:
+                valid: np.ndarray = (self.data >= xmin) & (self.data <= xmax)
+                self.grad += collapse(valid.astype(float) * out.grad, self.grad.shape)
 
         out._backward = _backward
         return out

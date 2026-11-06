@@ -18,12 +18,15 @@ def bce_mean(p: Tensaur, y: Tensaur) -> Tensaur:
     out = Tensaur(loss_val, (p,), _op="bce_mean")
 
     def _backward():
+        if not p.requires_grad:
+            return
+        # Match BCE gradients to the clipped forward loss and average over all elements.
         pc = p_clamp.data
         inside = (p.data >= EPS) & (p.data <= 1 - EPS)
 
         # dL/dp_i = (p - y) / (n * p * (1-p))
         local_grad = (pc - y_data) / (n * pc * (1 - pc))
-        p.grad += collapse(out.grad * inside * local_grad, p.grad.shape)
+        p.grad += collapse(out.grad * inside * local_grad, p.grad.shape) if p.requires_grad else 0
 
     out._backward = _backward
     return out
