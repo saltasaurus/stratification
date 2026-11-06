@@ -15,7 +15,7 @@ def bce_mean(p: Tensaur, y: Tensaur) -> Tensaur:
 
     # loss = -mean(y*log(p) + (1-y)(log(1-p)))
     loss_val = -np.mean(y_data * np.log(p_clamp.data) + (1 - y_data) * np.log(1 - p_clamp.data))
-    out = Tensaur(loss_val, (p,), _op="bce_mean")
+    out = Tensaur(loss_val, (p,), _op="bce_mean", requires_grad=p.requires_grad)
 
     def _backward():
         if not p.requires_grad:

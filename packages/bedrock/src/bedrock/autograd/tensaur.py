@@ -67,13 +67,18 @@ class Tensaur:
     def __add__(self, other) -> "Tensaur":
         other = as_tensaur(other)
 
-        out = Tensaur(self.data + other.data, (self, other), _op="add")
+        out = Tensaur(
+            self.data + other.data,
+            (self, other),
+            _op="add",
+            requires_grad=self.requires_grad or other.requires_grad,
+        )
 
         def _backward():
             # Self and other can have different shapes than out, so we must aggregate, not just broadcast the gradients
             if self.requires_grad:
                 self.grad += collapse(out.grad, self.grad.shape)
-            if self.requires_grad:
+            if other.requires_grad:
                 other.grad += collapse(out.grad, other.grad.shape)
 
         out._backward = _backward
@@ -83,12 +88,17 @@ class Tensaur:
     def __mul__(self, other) -> "Tensaur":
         other = as_tensaur(other)
 
-        out = Tensaur(self.data * other.data, (self, other), _op="mul")
+        out = Tensaur(
+            self.data * other.data,
+            (self, other),
+            _op="mul",
+            requires_grad=self.requires_grad or other.requires_grad,
+        )
 
         def _backward():
             if self.requires_grad:
                 self.grad += collapse(other.data * out.grad, self.grad.shape)
-            if self.requires_grad:
+            if other.requires_grad:
                 other.grad += collapse(self.data * out.grad, other.grad.shape)
 
         out._backward = _backward
@@ -98,7 +108,12 @@ class Tensaur:
     def __matmul__(self, other):
         other = as_tensaur(other)
 
-        out = Tensaur(self.data @ other.data, (self, other), _op="matmul")
+        out = Tensaur(
+            self.data @ other.data,
+            (self, other),
+            _op="matmul",
+            requires_grad=self.requires_grad or other.requires_grad,
+        )
 
         def _backward():
             if self.requires_grad:
@@ -112,7 +127,7 @@ class Tensaur:
 
     def __pow__(self, other):
         assert isinstance(other, (int, float)), "only supporting int/float powers for now"
-        out = Tensaur(self.data**other, (self,), f"**{other}")
+        out = Tensaur(self.data**other, (self,), f"**{other}", requires_grad=self.requires_grad)
 
         def _backward():
             if self.requires_grad:
@@ -147,7 +162,7 @@ class Tensaur:
         return f"Tensaur(data={self.data}, grad={self.grad})"
 
     def sum(self) -> "Tensaur":
-        out = Tensaur(self.data.sum(), (self,), _op="sum")
+        out = Tensaur(self.data.sum(), (self,), _op="sum", requires_grad=self.requires_grad)
 
         def _backward():
             if self.requires_grad:
@@ -222,7 +237,7 @@ class Tensaur:
         exp_z = np.exp(self.data[~pos_mask])
         data[~pos_mask] = exp_z / (1 + exp_z)
 
-        out = Tensaur(data, (self,), "sigmoid")
+        out = Tensaur(data, (self,), "sigmoid", requires_grad=self.requires_grad)
 
         def _backward():
             if self.requires_grad:
@@ -234,7 +249,7 @@ class Tensaur:
 
     def log(self) -> "Tensaur":
 
-        out = Tensaur(np.log(self.data), (self,), "ln")
+        out = Tensaur(np.log(self.data), (self,), "ln", requires_grad=self.requires_grad)
 
         def _backward():
             if self.requires_grad:
@@ -245,7 +260,7 @@ class Tensaur:
 
     def clamp(self, xmin, xmax) -> "Tensaur":
 
-        out = Tensaur(np.clip(self.data, xmin, xmax), (self,), _op="clamp")
+        out = Tensaur(np.clip(self.data, xmin, xmax), (self,), _op="clamp", requires_grad=self.requires_grad)
 
         def _backward():
             if self.requires_grad:
