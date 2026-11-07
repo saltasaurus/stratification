@@ -247,6 +247,17 @@ class Tensaur:
 
         return out
 
+    def tanh(self) -> "Tensaur":
+
+        out = Tensaur(np.tanh(self.data), (self,), requires_grad=self.requires_grad)
+
+        def _backward():
+            if self.requires_grad:
+                self.grad += collapse((1 - out.data**2) * out.grad, self.grad.shape)
+
+        out._backward = _backward
+        return out
+
     def log(self) -> "Tensaur":
 
         out = Tensaur(np.log(self.data), (self,), "ln", requires_grad=self.requires_grad)
