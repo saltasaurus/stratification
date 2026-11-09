@@ -11,3 +11,6 @@ wheels/
 
 # Go
 bin/
+
+# VSCode
+.vscode/

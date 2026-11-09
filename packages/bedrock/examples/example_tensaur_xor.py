@@ -1,6 +1,8 @@
 import numpy as np
 from bedrock.autograd.tensaur import Tensaur
 from bedrock.loss.BCE import bce_mean
+from bedrock.nn import Linear
+from bedrock.optim import SGD
 
 rng = np.random.default_rng(0)
 
@@ -10,28 +12,25 @@ X = Tensaur(
 )
 y = Tensaur([[0.0], [1.0], [1.0], [0.0]], requires_grad=False)
 
-W1 = Tensaur(rng.normal(scale=0.5, size=(2, 8)))
-b1 = Tensaur(np.zeros(8))
-W2 = Tensaur(rng.normal(scale=0.5, size=(8, 1)))
-b2 = Tensaur(np.zeros(1))
-parameters = [W1, b1, W2, b2]
+layer1 = Linear(2, 8, rng)
+layer2 = Linear(8, 1, rng)
+parameters = layer1.parameters() + layer2.parameters()
+
+optimizer = SGD(parameters=parameters, lr=0.1)
 
 
-def forward(x):
-    hidden = (x @ W1 + b1).tanh()
-    return (hidden @ W2 + b2).sigmoid()
+def forward(x: Tensaur):
+    return layer2(layer1(x).tanh()).sigmoid()
 
 
 for step in range(3000):
-    for parameter in parameters:
-        parameter.grad.fill(0)
+    optimizer.zero_grad()
 
     probabilities = forward(X)
     loss = bce_mean(probabilities, y)
     loss.backward()
 
-    for parameter in parameters:
-        parameter.data -= 0.1 * parameter.grad
+    optimizer.step()
 
     if step % 500 == 0:
         print(step, loss.data.item())

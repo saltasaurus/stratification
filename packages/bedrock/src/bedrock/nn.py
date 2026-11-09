@@ -1,7 +1,11 @@
 import random
 from typing import Any
 
-from .value import Value
+import numpy as np
+
+from bedrock.autograd.tensaur import Tensaur
+
+from .autograd.value import Value
 
 
 class Module:
@@ -10,7 +14,32 @@ class Module:
 
     def zero_grad(self):
         for p in self.parameters():
-            p.grad = 0.0
+            if isinstance(p, Tensaur):
+                p.grad.fill(0)
+            else:
+                p.grad = 0.0
+
+
+"""
+``Tensaur`` based neural network building blocks
+"""
+
+
+class Linear(Module):
+    def __init__(self, in_features: int, out_features: int, rng) -> None:
+        self.weight = Tensaur(rng.normal(scale=0.5, size=(in_features, out_features)), requires_grad=True)
+        self.bias = Tensaur(np.zeros(out_features), requires_grad=True)
+
+    def __call__(self, x: Tensaur) -> Tensaur:
+        return x @ self.weight + self.bias
+
+    def parameters(self) -> list[Tensaur]:
+        return [self.weight, self.bias]
+
+
+"""
+``Value`` based neural network.
+"""
 
 
 class Neuron(Module):
