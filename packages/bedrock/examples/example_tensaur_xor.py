@@ -3,8 +3,10 @@ from bedrock.autograd.tensaur import Tensaur
 from bedrock.loss.BCE import bce_mean
 from bedrock.nn import Linear
 from bedrock.optim import SGD, Adam
+from bedrock.random import manual_seed
 
-rng = np.random.default_rng(0)
+manual_seed(0)
+
 
 X = Tensaur(
     [[0.0, 0.0], [0.0, 1.0], [1.0, 0.0], [1.0, 1.0]],
@@ -12,8 +14,8 @@ X = Tensaur(
 )
 y = Tensaur([[0.0], [1.0], [1.0], [0.0]], requires_grad=False)
 
-layer1 = Linear(2, 8, rng)
-layer2 = Linear(8, 1, rng)
+layer1 = Linear(2, 8, "normal")
+layer2 = Linear(8, 1, "normal")
 parameters = layer1.parameters() + layer2.parameters()
 
 # optimizer = SGD(parameters=parameters, lr=0.1, momentum=0.9)
