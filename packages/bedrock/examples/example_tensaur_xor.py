@@ -16,7 +16,7 @@ layer1 = Linear(2, 8, rng)
 layer2 = Linear(8, 1, rng)
 parameters = layer1.parameters() + layer2.parameters()
 
-optimizer = SGD(parameters=parameters, lr=0.1)
+optimizer = SGD(parameters=parameters, lr=0.1, momentum=0.9)
 
 
 def forward(x: Tensaur):
@@ -32,7 +32,7 @@ for step in range(3000):
 
     optimizer.step()
 
-    if step % 500 == 0:
+    if step % 250 == 0:
         print(step, loss.data.item())
 
 probabilities = forward(X).data
