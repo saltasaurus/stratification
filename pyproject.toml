@@ -5,6 +5,7 @@ description = "Series of ML projects whose knowledge builds off one another to f
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
+    "bedrock",
     "scipy>=1.18.1",
 ]
 
@@ -15,14 +16,15 @@ dev = [
     "ruff",
     "pre-commit",
     "nbstripout",
+    "torch>=2.15.0",
 ]
 
 [tool.uv.workspace]
 members = ["packages/*", "projects/*"]
 
 [tool.uv.sources]
-bedrock = { workspace = true }
 mineral = { workspace = true }
+bedrock = { workspace = true }
 
 [tool.ruff]
 line-length = 120
