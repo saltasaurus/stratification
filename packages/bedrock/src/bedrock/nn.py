@@ -26,8 +26,16 @@ class Module:
 
 
 class Linear(Module):
-    def __init__(self, in_features: int, out_features: int, rng) -> None:
-        self.weight = Tensaur(rng.normal(scale=0.5, size=(in_features, out_features)), requires_grad=True)
+    def __init__(self, in_features: int, out_features: int, init="", seed: int = 42) -> None:
+        self.rng = np.random.default_rng(seed)
+        if init == "xavier":
+            weight = self.rng.random((in_features, out_features))
+            self.weight = weight / np.sqrt(1 / in_features)
+        elif init == "he":
+            weight = self.rng.random((in_features, out_features))
+            self.weight = weight / np.sqrt(2 / in_features)
+        else:
+            self.weight = Tensaur(self.rng.normal(scale=0.5, size=(in_features, out_features)), requires_grad=True)
         self.bias = Tensaur(np.zeros(out_features), requires_grad=True)
 
     def __call__(self, x: Tensaur) -> Tensaur:
