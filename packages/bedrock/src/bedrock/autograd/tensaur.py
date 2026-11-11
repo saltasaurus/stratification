@@ -258,6 +258,17 @@ class Tensaur:
         out._backward = _backward
         return out
 
+    def relu(self) -> "Tensaur":
+
+        out = Tensaur(np.maximum(self.data, 0), (self,), requires_grad=self.requires_grad)
+
+        def _backward():
+            if self.requires_grad:
+                self.grad += collapse(out.grad * (self.data > 0))
+
+        out._backward = _backward
+        return out
+
     def log(self) -> "Tensaur":
 
         out = Tensaur(np.log(self.data), (self,), "ln", requires_grad=self.requires_grad)
