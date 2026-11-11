@@ -2,7 +2,7 @@ import numpy as np
 from bedrock.autograd.tensaur import Tensaur
 from bedrock.loss.BCE import bce_mean
 from bedrock.nn import Linear
-from bedrock.optim import SGD
+from bedrock.optim import SGD, Adam
 
 rng = np.random.default_rng(0)
 
@@ -16,7 +16,8 @@ layer1 = Linear(2, 8, rng)
 layer2 = Linear(8, 1, rng)
 parameters = layer1.parameters() + layer2.parameters()
 
-optimizer = SGD(parameters=parameters, lr=0.1, momentum=0.9)
+# optimizer = SGD(parameters=parameters, lr=0.1, momentum=0.9)
+optimizer = Adam(parameters, lr=0.01)
 
 
 def forward(x: Tensaur):
