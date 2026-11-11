@@ -4,6 +4,7 @@ from typing import Any
 import numpy as np
 
 from bedrock.autograd.tensaur import Tensaur
+from bedrock.random import get_rng
 
 from .autograd.value import Value
 
@@ -26,8 +27,7 @@ class Module:
 
 
 class Linear(Module):
-    def __init__(self, in_features: int, out_features: int, init="", seed: int = 42) -> None:
-        self.rng = np.random.default_rng(seed)
+    def __init__(self, in_features: int, out_features: int, init="normal") -> None:
         if init == "xavier":
             std = np.sqrt(1 / in_features)
         elif init == "he":
@@ -37,7 +37,7 @@ class Linear(Module):
         else:
             raise ValueError(f"unknown init: {init!r}")
 
-        self.weight = Tensaur(self.rng.normal(scale=std, size=(in_features, out_features)), requires_grad=True)
+        self.weight = Tensaur(get_rng().normal(scale=std, size=(in_features, out_features)), requires_grad=True)
         self.bias = Tensaur(np.zeros(out_features), requires_grad=True)
 
     def __call__(self, x: Tensaur) -> Tensaur:
