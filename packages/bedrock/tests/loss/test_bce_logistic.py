@@ -83,7 +83,7 @@ def test_fit_tensaur_loss_decreases():
     y_np = np.array([[0.0]] * 20 + [[1.0]] * 20)
     model = LogisticRegression(lr=0.5, epochs=200)
     # fit_tensaur should init w as (d, 1), b as (1, 1)
-    model.fit_tensaur(Tensaur(X_np.copy()), Tensaur(y_np.copy()))
+    model.fit(Tensaur(X_np.copy()), Tensaur(y_np.copy()))
     w0 = np.zeros((2, 1))
     b0 = np.zeros((1, 1))
     loss0 = _bce_mean_np(_sigmoid(X_np @ w0 + b0), y_np)
