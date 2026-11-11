@@ -4,7 +4,7 @@ from bedrock.nn import Linear
 
 
 def test_linear_forward_and_parameters():
-    layer = Linear(2, 3, np.random.default_rng(0))
+    layer = Linear(2, 3, "normal")
     layer.weight.data[:] = [[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]]
     layer.bias.data[:] = [0.1, 0.2, 0.3]
     x = Tensaur([[2.0, -1.0]], requires_grad=False)
@@ -23,7 +23,7 @@ def test_linear_forward_and_parameters():
 
 
 def test_linear_backward_and_zero_grad():
-    layer = Linear(2, 3, np.random.default_rng(0))
+    layer = Linear(2, 3, "normal")
     x = Tensaur([[2.0, -1.0], [1.0, 3.0]], requires_grad=False)
 
     layer(x).sum().backward()

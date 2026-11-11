@@ -264,7 +264,7 @@ class Tensaur:
 
         def _backward():
             if self.requires_grad:
-                self.grad += collapse(out.grad * (self.data > 0))
+                self.grad += collapse(out.grad * (self.data > 0), self.grad.shape)
 
         out._backward = _backward
         return out
