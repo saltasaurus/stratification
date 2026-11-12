@@ -6,6 +6,7 @@ readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
     "bedrock",
+    "convection",
     "scipy>=1.18.1",
 ]
 
@@ -25,6 +26,7 @@ members = ["packages/*", "projects/*"]
 [tool.uv.sources]
 mineral = { workspace = true }
 bedrock = { workspace = true }
+convection = { workspace = true }
 
 [tool.ruff]
 line-length = 120

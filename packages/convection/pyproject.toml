@@ -1,0 +1,13 @@
+[project]
+name = "convection"
+version = "0.1.0"
+description = "Serving and infrastructure: inference gateway, queues, caching"
+requires-python = ">=3.12"
+dependencies = [
+    "fastapi>=0.115",
+    "uvicorn>=0.30",
+]
+
+[build-system]
+requires = ["uv_build>=0.8.0,<0.9.0"]
+build-backend = "uv_build"
