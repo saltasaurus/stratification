@@ -2,7 +2,7 @@ import queue
 import threading
 from uuid import uuid4
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Header
 
 from .schemas import PredictFn, PredictionRequest, PredictionResponse
 from .store import InMemoryStore
@@ -22,15 +22,56 @@ def create_app(predict: PredictFn, model_version: str, n_features: int, threshol
         ).start()
 
     @app.post("/predictions", status_code=202, response_model=PredictionResponse)
-    def create_prediction(req: PredictionRequest) -> PredictionResponse:
+    def create_prediction(
+        req: PredictionRequest, 
+        idempotency_key: str | None = Header(None, alias="Idempotency-Key"),
+    ) -> PredictionResponse:
+        
         if len(req.features) != n_features:
             raise HTTPException(status_code=422, detail=f"Expected {n_features} features; got {len(req.features)}")
 
-        pr = PredictionResponse(
-            id=str(uuid4()),
-            model_version=model_version,
-            status="pending",
-        )
+        """
+        if idempotency_key is not None:
+            existing_id = store.get_id_for_key(idempotency_key)
+            if existing_id is not None:
+                response.status_code = 200
+                return store.get(existing_id)
+
+        pr = PredictionResponse(id=str(uuid4()), model_version=model_version, status="pending")
+        store.save(pr)
+        if idempotency_key is not None:
+            store.save_key(idempotency_key, pr.id)
+        q.put((pr.id, req.features))
+        return pr
+        """
+
+        if idempotency_key is None:
+            new_id = str(uuid4())
+            pr = PredictionResponse(
+                id=new_id,
+                model_version=model_version,
+                status="pending",
+            )
+        else:
+            keyed_id = store.get_id_for_key(idempotency_key)
+            if keyed_id is None:
+                pr = PredictionResponse(
+                    id=str(uuid4()),
+                    model_version=model_version,
+                    status="pending",
+                )
+            
+                store.save_key(idempotency_key, new_id)
+            else:
+                pr = store.get(keyed_id)
+                if pr is None:
+                    pr = PredictionResponse(
+                        id=str(uuid4()),
+                        model_version=model_version,
+                        status="pending",
+                    )
+                    return pr
+
 
         store.save(pr)
 
