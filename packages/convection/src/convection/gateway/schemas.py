@@ -1,5 +1,9 @@
+from collections.abc import Callable
+from typing import Literal
+
 from pydantic import BaseModel
 
+PredictFn = Callable[[list[float]], float]
 
 class PredictionRequest(BaseModel):
     features: list[float]
@@ -7,6 +11,7 @@ class PredictionRequest(BaseModel):
 
 class PredictionResponse(BaseModel):
     id: str
-    defect: bool
-    score: float
+    defect: bool | None = None
+    score: float | None = None
     model_version: str
+    status: Literal["pending", "done", "failed"]

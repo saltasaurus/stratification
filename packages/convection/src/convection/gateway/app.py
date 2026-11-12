@@ -1,31 +1,48 @@
-from collections.abc import Callable
+import queue
+import threading
 from uuid import uuid4
 
 from fastapi import FastAPI, HTTPException
 
-from .schemas import PredictionRequest, PredictionResponse
+from .schemas import PredictFn, PredictionRequest, PredictionResponse
+from .store import InMemoryStore
+from .worker import run_worker
 
-PredictFn = Callable[[list[float]], float]
 
-
-def create_app(predict: PredictFn, model_version: str, n_features: int, threshold: float = 0.5) -> FastAPI:
+def create_app(predict: PredictFn, model_version: str, n_features: int, threshold: float = 0.5, store: InMemoryStore | None = None) -> FastAPI:
     app = FastAPI(title="convection gateway")
+    if store is None:
+        store = InMemoryStore()
 
-    @app.post("/predictions", status_code=201, response_model=PredictionResponse)
+    q = queue.Queue()
+    threading.Thread(
+        target=run_worker,
+        args=(q, store, predict, threshold, model_version), 
+        daemon=True,
+        ).start()
+
+    @app.post("/predictions", status_code=202, response_model=PredictionResponse)
     def create_prediction(req: PredictionRequest) -> PredictionResponse:
-        # 1. if len(req.features) != n_features -> raise HTTPException(422, ...)
         if len(req.features) != n_features:
             raise HTTPException(status_code=422, detail=f"Expected {n_features} features; got {len(req.features)}")
-        # 2. score = predict(req.features)
-        score = predict(req.features)
-        # 3. return PredictionResponse with id=str(uuid4()), defect=score >= threshold, ...
+
         pr = PredictionResponse(
             id=str(uuid4()),
-            defect=score >= threshold,
-            score=score,
             model_version=model_version,
+            status="pending",
         )
+
+        store.save(pr)
+
+        q.put((pr.id, req.features))
 
         return pr
 
+    @app.get("/predictions/{id}", status_code=200, response_model=PredictionResponse)
+    def get_prediction(id: str) -> PredictionResponse:
+        pred = store.get(id)
+        if pred is None:
+            raise HTTPException(404, f"ID {id} missing from predictions")
+        return pred
+    
     return app
