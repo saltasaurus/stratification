@@ -41,8 +41,11 @@ def create_app(
             if idempotency_key is not None:
                 existing_id = store.get_id_for_key(idempotency_key)
                 if existing_id is not None:
+                    existing = store.get(existing_id)
+                    if existing is None:
+                        raise HTTPException(500, "Idempotency key points to a missing prediction")
                     response.status_code = 200
-                    return store.get(existing_id)
+                    return existing
 
             pr = PredictionResponse(id=str(uuid4()), model_version=model_version, status="pending")
             store.save(pr)
