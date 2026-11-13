@@ -24,6 +24,8 @@ def create_app(
         daemon=True,
     ).start()
 
+    lock = threading.Lock()
+
     @app.post("/predictions", status_code=202, response_model=PredictionResponse)
     def create_prediction(
         req: PredictionRequest,
@@ -34,17 +36,20 @@ def create_app(
         if len(req.features) != n_features:
             raise HTTPException(status_code=422, detail=f"Expected {n_features} features; got {len(req.features)}")
 
-        if idempotency_key is not None:
-            existing_id = store.get_id_for_key(idempotency_key)
-            if existing_id is not None:
-                response.status_code = 200
-                return store.get(existing_id)
+        # Prevent race conditions where two repeat requests both see no existing ID and queue a prediction
+        with lock:
+            if idempotency_key is not None:
+                existing_id = store.get_id_for_key(idempotency_key)
+                if existing_id is not None:
+                    response.status_code = 200
+                    return store.get(existing_id)
 
-        pr = PredictionResponse(id=str(uuid4()), model_version=model_version, status="pending")
-        store.save(pr)
-        if idempotency_key is not None:
-            store.save_key(idempotency_key, pr.id)
-        q.put((pr.id, req.features))
+            pr = PredictionResponse(id=str(uuid4()), model_version=model_version, status="pending")
+            store.save(pr)
+            if idempotency_key is not None:
+                store.save_key(idempotency_key, pr.id)
+
+        q.put((pr.id, req.features))  # Thread safe already
         return pr
 
     @app.get("/predictions/{id}", status_code=200, response_model=PredictionResponse)
