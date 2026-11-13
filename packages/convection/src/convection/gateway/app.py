@@ -4,8 +4,9 @@ from uuid import uuid4
 
 from fastapi import FastAPI, Header, HTTPException, Response
 
-from .schemas import PredictFn, PredictionRequest, PredictionResponse
+from .schemas import PredictionRequest, PredictionResponse
 from .store import InMemoryStore
+from .types import PredictFn
 from .worker import run_worker
 
 
@@ -28,7 +29,7 @@ def create_app(
         req: PredictionRequest,
         response: Response,
         idempotency_key: str | None = Header(None, alias="Idempotency-Key"),
-    ) -> PredictionResponse | None:
+    ) -> PredictionResponse:
 
         if len(req.features) != n_features:
             raise HTTPException(status_code=422, detail=f"Expected {n_features} features; got {len(req.features)}")

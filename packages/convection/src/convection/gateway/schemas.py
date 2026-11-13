@@ -1,9 +1,7 @@
-from collections.abc import Callable
 from typing import Literal
 
 from pydantic import BaseModel
 
-PredictFn = Callable[[list[float]], float]
 
 class PredictionRequest(BaseModel):
     features: list[float]
