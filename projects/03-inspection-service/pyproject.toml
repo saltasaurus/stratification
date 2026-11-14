@@ -1,0 +1,15 @@
+[project]
+name = "inspection-service"
+version = "0.1.0"
+requires-python = ">=3.12"
+dependencies = [
+    "bedrock",
+    "convection",
+]
+
+[tool.uv]
+package = false
+
+[tool.uv.sources]
+convection = { workspace = true }
+bedrock = { workspace = true }
