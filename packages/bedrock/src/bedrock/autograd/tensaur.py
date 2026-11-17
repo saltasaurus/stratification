@@ -280,6 +280,16 @@ class Tensaur:
         out._backward = _backward
         return out
 
+    def exp(self) -> "Tensaur":
+        out = Tensaur(np.exp(self.data), (self,), "exp", requires_grad=self.requires_grad)
+
+        def _backward():
+            if self.requires_grad:
+                self.grad += collapse(out.grad * out.data, self.grad.shape)
+
+        out._backward = _backward
+        return out
+
     def clamp(self, xmin, xmax) -> "Tensaur":
 
         out = Tensaur(np.clip(self.data, xmin, xmax), (self,), _op="clamp", requires_grad=self.requires_grad)

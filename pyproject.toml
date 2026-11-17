@@ -7,6 +7,7 @@ requires-python = ">=3.12"
 dependencies = [
     "bedrock",
     "convection",
+    "strata",
     "scipy>=1.18.1",
 ]
 
@@ -28,6 +29,7 @@ members = ["packages/*", "projects/*"]
 mineral = { workspace = true }
 bedrock = { workspace = true }
 convection = { workspace = true }
+strata = { workspace = true }
 
 [tool.ruff]
 line-length = 120
